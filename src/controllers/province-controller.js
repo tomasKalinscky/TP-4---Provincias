@@ -1,67 +1,53 @@
-import { Router } from "express";
-import provincias from "../entities/province.js"
+import express from 'express';
+import ProvinceService from '../services/province-service.js';
 
-const router = new Router();
+const router = express.Router();
 
-router.get("", (req, res) => { 
-    res.status(200).send(provincias);
-})
-
-
-router.get("", (req, res) => {
-    const id = req.params.id;
-    if (id >= 0 && id < provincias.length) {
-        const provincia = provincias[id];
-        res.status(200).send({ id, provincia });
-    } else {
-        res.status(404).send("Provincia no encontrada");
-    }
+router.get("/", async (req, res) => {
+  const provinces = await ProvinceService.getAllProvinces();
+  res.status(200).send(provinces);
 });
 
-router.post("", (req, res) => {
-    const { name, full_name, latitude, longitude, display_order } = req.body;
-
-    if (!name || name.length < 3) {
-        return res.status(400).send("El nombre de la provincia debe tener al menos 3 letras.");
-    }
-    const nuevaProvincia = {
-        name,
-        full_name,
-        latitude,
-        longitude,
-        display_order
-    };
-    res.status(201).send(nuevaProvincia);
+router.get("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const province = await ProvinceService.getProvinceById(id);
+  if (province) {
+    res.status(200).send(province);
+  } else {
+    res.status(404).send("Provincia no encontrada");
+  }
 });
 
-
-router.put("", (req, res) => {
-    const { id, name, full_name, latitude, longitude, display_order } = req.body;
-    const existingProvince = provincias.find(provincia => provincia.id === id);
-    if (existingProvince) {
-        return res.status(404).send("Ya existe una provincia con ese ID.");
-        console.log("entro a esto")
-    }
-    if (!name || name.length < 3) {
-        return res.status(400).send("El nombre de la provincia es requerido y debe tener al menos 3 caracteres.");
-    }
-    const nuevaProvincia = { id, name, full_name, latitude, longitude, display_order };
-
-    provincias.push(nuevaProvincia);
-
-    res.status(201).send(nuevaProvincia);
+router.post("/", async (req, res) => {
+  const newProvince = req.body;
+  try {
+    const result = await ProvinceService.addProvince(newProvince);
+    res.status(201).send(result);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
 });
 
-router.delete(":id", (req, res) => {
-    const id = parseInt(req.params.id);
+router.put("/", async (req, res) => {
+  const updatedProvince = req.body;
+  try {
+    const result = await ProvinceService.updateProvince(updatedProvince);
+    res.status(200).send(result);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
 
-    const index = provincias.findIndex(provincia => provincia.id === id);
-    if (index !== -1) {
-        provincias.splice(index, 1);
-        res.status(200).send("Provincia eliminada correctamente.");
-    } else {
-        res.status(404).send("Provincia no encontrada.");
-    }
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    const result = await ProvinceService.deleteProvince(id);
+    res.status(200).send("Provincia eliminada correctamente.");
+  } catch (error) {
+    res.status(404).send(error.message);
+  }
 });
 
 export default router;
+
+
